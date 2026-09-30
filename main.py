@@ -85,7 +85,7 @@ def run_all_accounts():
         accounts = load_accounts()
         if not accounts:
             print(Fore.RED + "[-] Gagal mendapatkan data akun. Pastikan file session tersedia di " + config.SESSIONS_DIR + Style.RESET_ALL)
-            return
+            return 0, []
 
     proxies = load_proxies()
     print(Fore.CYAN + f"[*] Memulai eksekusi untuk {len(accounts)} akun..." + Style.RESET_ALL)
@@ -94,13 +94,16 @@ def run_all_accounts():
     print("="*65)
 
     success_count = 0
+    all_cooldowns = []
     for idx, init_data in enumerate(accounts, start=1):
         proxy = proxies[(idx - 1) % len(proxies)] if proxies else None
         runner = BotRunner(init_data, account_index=idx, proxy=proxy)
         try:
-            ok = runner.run_account()
+            ok, cd = runner.run_account()
             if ok:
                 success_count += 1
+            if cd is not None and cd > 0:
+                all_cooldowns.append(cd)
         except Exception as e:
             print(Fore.RED + f"[Akun #{idx}] [ERROR] Terjadi kesalahan: {e}" + Style.RESET_ALL)
 
@@ -111,13 +114,22 @@ def run_all_accounts():
         print("-" * 65)
 
     print(Fore.GREEN + f"\n[V] Selesai memproses {len(accounts)} akun ({success_count} sukses)." + Style.RESET_ALL)
+    return success_count, all_cooldowns
 
 def loop_mode():
     while True:
         banner()
-        run_all_accounts()
-        wait_seconds = config.LOOP_INTERVAL_HOURS * 3600
-        print(Fore.CYAN + f"\n[*] Siklus selesai. Menunggu {config.LOOP_INTERVAL_HOURS} jam untuk siklus berikutnya..." + Style.RESET_ALL)
+        success, cooldowns = run_all_accounts()
+        if cooldowns:
+            min_cd = min(cooldowns)
+            # Menyesuaikan waktu jeda dengan cooldown server MiniApp (+ buffer 15 detik)
+            wait_seconds = max(180, min_cd + 15)
+            mins = wait_seconds // 60
+            print(Fore.CYAN + f"\n[*] Cooldown terdekat dari server MiniApp: {mins} menit ({wait_seconds}s). Menunggu cooldown selesai..." + Style.RESET_ALL)
+        else:
+            wait_seconds = config.LOOP_INTERVAL_HOURS * 3600
+            print(Fore.CYAN + f"\n[*] Tidak ada cooldown aktif. Menunggu default {config.LOOP_INTERVAL_HOURS} jam..." + Style.RESET_ALL)
+
         is_terminal = sys.stdout.isatty()
         try:
             for s in range(wait_seconds, 0, -1):
@@ -129,7 +141,6 @@ def loop_mode():
                     sys.stdout.write(f"\r{Fore.YELLOW}{timer_str}{Style.RESET_ALL}")
                     sys.stdout.flush()
                 else:
-                    # Di background / log file: cetak setiap 15 menit agar log rapi
                     if s % 900 == 0 or s == wait_seconds:
                         print(f"{Fore.YELLOW}{timer_str}{Style.RESET_ALL}")
                 time.sleep(1)
@@ -137,6 +148,7 @@ def loop_mode():
         except KeyboardInterrupt:
             print(Fore.RED + "\n[!] Mode loop dihentikan oleh pengguna." + Style.RESET_ALL)
             break
+
 
 
 def main():

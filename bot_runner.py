@@ -54,7 +54,8 @@ class BotRunner:
         res = self.api.get_me()
         if "error" in res or "state" not in res:
             self.log("ERROR", f"Gagal login: {res.get('error')}", Fore.RED)
-            return False
+            return False, None
+
 
         self.state = res["state"]
         profile = self.state.get("profile", {})
@@ -202,20 +203,28 @@ class BotRunner:
                 b_name = str(boss_data.get("type", "Boss Monster")).capitalize()
                 b_hp = boss_data.get("hp", 0)
                 self.log("BOSS", f"Monster Boss Terdeteksi: {b_name} (HP: {b_hp:,})", Fore.RED)
+                server_time = self.state.get("serverTime", int(time.time() * 1000))
                 for col in self.state.get("colonies", []):
                     if not col.get("dead"):
                         cid = col.get("id")
                         cname = col.get("name")
+                        boss_ready = col.get("bossReady", 0)
+                        if boss_ready > server_time:
+                            rem_s = int((boss_ready - server_time) / 1000)
+                            self.log("BOSS", f"Koloni {cname} cooldown istirahat: {rem_s // 60} menit {rem_s % 60} detik lagi.", Fore.LIGHTBLACK_EX)
+                            continue
                         self.log("BOSS", f"Koloni {cname} menyerang {b_name}...", Fore.YELLOW)
                         hit_res = self.api.call_action("bossHit", {"cid": cid})
                         if isinstance(hit_res, dict) and ("dmg" in hit_res or "crit" in hit_res):
                             dmg = hit_res.get("dmg", 0)
                             crit = " [CRITICAL HIT!]" if hit_res.get("crit") else ""
                             self.log("BOSS", f"Serangan Berhasil! Damage: {Fore.RED}{dmg:,}{crit}{Fore.GREEN} | HP Boss: {hit_res.get('hp', 0):,}", Fore.GREEN)
+                            col["bossReady"] = server_time + 7200000
                         else:
                             err = hit_res.get("error") if isinstance(hit_res, dict) else str(hit_res)
-                            self.log("BOSS", f"Status Serangan: {err or 'Cooldown 2 jam sedang berjalan'}", Fore.LIGHTBLACK_EX)
+                            self.log("BOSS", f"Status Serangan: {err or 'Cooldown sedang berjalan'}", Fore.LIGHTBLACK_EX)
                         sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+
 
 
         # 5g. Upgrade Sarang / Nest Koloni untuk Gandakan Kapasitas Pekerja (+60 XP & Power)
@@ -365,6 +374,16 @@ class BotRunner:
                     self.log("PVP", f"Hasil Latihan PVP: {res_str} | Payout: {train_res.get('payout')}", Fore.CYAN)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-        # Summary State
-        self.log("DONE", f"Semua siklus otomatis selesai untuk {user_name} (AMBER: {self.state.get('fero')}, GRAM: {self.state.get('gram', 0):.4f})", Fore.MAGENTA)
-        return True
+        # Summary State & Cooldown Tracking
+        server_time = self.state.get("serverTime", int(time.time() * 1000))
+        account_cds = []
+        for col in self.state.get("colonies", []):
+            b_ready = col.get("bossReady", 0)
+            if b_ready > server_time:
+                account_cds.append(int((b_ready - server_time) / 1000))
+
+        min_cd = min(account_cds) if account_cds else None
+        cd_info = f" | Next Boss Hit: {min_cd // 60}m {min_cd % 60}s" if min_cd else " | Boss Hit: SIAP!"
+        self.log("DONE", f"Semua siklus otomatis selesai untuk {user_name} (AMBER: {self.state.get('fero')}, GRAM: {self.state.get('gram', 0):.4f}){cd_info}", Fore.MAGENTA)
+        return True, min_cd
+
