@@ -4,7 +4,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Telegram%20MiniApp-orange.svg)](https://t.me/HoneyAntsBot/app)
 
-Bot multi-akun otomatis untuk Telegram MiniApp **HoneyAnts** https://t.me/HoneyAntsBot/app?startapp=ref_75FBM8. Dilengkapi dengan fitur penyerangan **Boss Monster otomatis setiap 2 jam**, pengoptimalan **Power Militer (Soldier Caste)**, perawatan koloni agresif, panen madu, upgrade sarang, dan klaim seluruh event/task harian.
+## Bot multi-akun otomatis untuk Telegram MiniApp **HoneyAnts** https://t.me/HoneyAntsBot/app?startapp=ref_75FBM8. 
+Dilengkapi dengan fitur penyerangan **Boss Monster otomatis setiap 2 jam**, pengoptimalan **Power Militer (Soldier Caste)**, perawatan koloni agresif, panen madu, upgrade sarang, dan klaim seluruh event/task harian.
 
 ---
 
