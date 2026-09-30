@@ -37,7 +37,19 @@ SOCIAL_QUESTS = [
 def sleep_random(min_s, max_s):
     time.sleep(random.uniform(min_s, max_s))
 
+def check_act_ok(act_res):
+    if not isinstance(act_res, dict):
+        return False, "Response tidak valid"
+    results = act_res.get("results", [])
+    if not results:
+        return False, act_res.get("error", "Tidak ada hasil respon")
+    first = results[0]
+    if first.get("ok"):
+        return True, None
+    return False, first.get("error") or first.get("code") or "Aksi ditolak server"
+
 class BotRunner:
+
     def __init__(self, init_data: str, account_index: int = 1, proxy: str = None):
         self.init_data = init_data
         self.account_index = account_index
@@ -183,18 +195,50 @@ class BotRunner:
                         inv = self.state.get("inv", {})
                     sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-        # 5f. Gabung Clan & Serang Boss Monster (Cooldown 2 Jam)
+        # 5f. Gabung Clan & Serang Boss Monster
         if config.AUTO_JOIN_CLAN and not self.state.get("clan"):
             clan_list = self.state.get("clanList", [])
-            open_clans = [c for c in clan_list if c.get("mode") == "open" and c.get("members", 0) < c.get("cap", 30)]
-            if open_clans:
-                target_clan = open_clans[0]
-                self.log("CLAN", f"Bergabung ke Clan: {target_clan.get('name')} (Anggota: {target_clan.get('members')}/{target_clan.get('cap')})...", Fore.YELLOW)
+            # Hitung estimasi power koloni tertinggi
+            est_power = 100
+            if colonies:
+                c0 = colonies[0]
+                workers = int(c0.get("E", 0) + c0.get("P", 0))
+                est_power = max(100, workers * 7)
+
+            # 1. Cari clan terbuka (mode open) yang slotnya tersedia dan power mencukupi
+            eligible_open = [c for c in clan_list if c.get("mode") == "open" and c.get("members", 0) < c.get("cap", 30) and est_power >= c.get("min", 0)]
+            if eligible_open:
+                target_clan = eligible_open[0]
+                self.log("CLAN", f"Mencoba bergabung ke Clan {target_clan.get('name')} (Min Power: {target_clan.get('min')}, Slot: {target_clan.get('members')}/{target_clan.get('cap')})...", Fore.YELLOW)
                 act_res = self.api.send_actions([{"type": "clanJoin", "data": {"id": target_clan.get("id")}}])
-                if act_res.get("state"):
-                    self.state = act_res["state"]
+                ok, err = check_act_ok(act_res)
+                if ok:
+                    self.state = act_res.get("state", self.state)
                     self.log("CLAN", f"Berhasil bergabung ke Clan {target_clan.get('name')}!", Fore.GREEN)
+                else:
+                    self.log("CLAN", f"Gagal masuk Clan {target_clan.get('name')}: {err}", Fore.LIGHTBLACK_EX)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+            else:
+                # 2. Jika clan open min 0 sedang penuh (30/30) & clan open lain butuh power tinggi (misal min 250):
+                # Kirim permintaan bergabung (clanRequest) ke clan approval terdekat jika belum ada request pending
+                clan_req = self.state.get("clanReq", [])
+                open_clans = [c for c in clan_list if c.get("mode") == "open" and c.get("members", 0) < c.get("cap", 30)]
+                lowest_open_min = min([c.get("min", 0) for c in open_clans]) if open_clans else 250
+
+                if not clan_req:
+                    approval_clans = [c for c in clan_list if c.get("mode") == "approval" and c.get("members", 0) < c.get("cap", 30) and c.get("min", 0) <= 200]
+                    if approval_clans:
+                        req_target = approval_clans[0]
+                        self.log("CLAN", f"Mengajukan izin masuk ke Clan: {req_target.get('name')} (Min Power: {req_target.get('min')})...", Fore.YELLOW)
+                        act_res = self.api.send_actions([{"type": "clanRequest", "data": {"id": req_target.get("id")}}])
+                        ok, err = check_act_ok(act_res)
+                        if ok:
+                            self.log("CLAN", f"Permintaan izin gabung Clan {req_target.get('name')} terkirim (menunggu persetujuan ketua)!", Fore.GREEN)
+                        else:
+                            self.log("CLAN", f"Info Clan Request: {err}", Fore.LIGHTBLACK_EX)
+                        sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+                else:
+                    self.log("CLAN", f"Kekuatan saat ini (~{est_power} Power) belum mencukupi Clan terbuka (butuh min {lowest_open_min} Power). Menunggu slot terbuka / persetujuan...", Fore.LIGHTBLACK_EX)
 
         if config.AUTO_ATTACK_BOSS and self.state.get("clan"):
             boss_info = self.api.get_boss()
@@ -225,28 +269,29 @@ class BotRunner:
                             self.log("BOSS", f"Status Serangan: {err or 'Cooldown sedang berjalan'}", Fore.LIGHTBLACK_EX)
                         sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-
-
         # 5g. Upgrade Sarang / Nest Koloni untuk Gandakan Kapasitas Pekerja (+60 XP & Power)
         for col in self.state.get("colonies", []):
             cid = col.get("id")
             nest_lv = col.get("nest", 0)
             if nest_lv == 0 and self.state.get("fero", 0) >= 30:
-                self.log("UPGRADE", f"Koloni {col.get('name')}: Upgrade Sarang ke Ytong (Kapasitas +100%, +60 XP, Power Boost)...", Fore.YELLOW)
                 act_res = self.api.send_actions([{"type": "equip", "data": {"cid": cid, "kind": "nest", "lv": 1}}])
-                if act_res.get("state"):
-                    self.state = act_res["state"]
-                    self.log("UPGRADE", f"Sarang Koloni {col.get('name')} berhasil ditingkatkan!", Fore.GREEN)
+                ok, err = check_act_ok(act_res)
+                if ok:
+                    self.state = act_res.get("state", self.state)
+                    self.log("UPGRADE", f"Sarang Koloni {col.get('name')} berhasil ditingkatkan ke Ytong!", Fore.GREEN)
+                else:
+                    self.log("UPGRADE", f"Info upgrade sarang: {err}", Fore.LIGHTBLACK_EX)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
         # 5h. Klaim Milestone Pemula (First Steps Bonus)
         first_data = self.state.get("first", {})
         for f_id in ["f1", "f2", "f3", "f4", "f5", "f6"]:
             if not first_data.get(f_id):
-                self.log("FIRST", f"Mengklaim reward milestone pemula: {f_id}...", Fore.YELLOW)
                 act_res = self.api.send_actions([{"type": "firstClaim", "data": {"id": f_id}}])
-                if act_res.get("state"):
-                    self.state = act_res["state"]
+                ok, err = check_act_ok(act_res)
+                if ok:
+                    self.state = act_res.get("state", self.state)
+                    self.log("FIRST", f"Reward milestone pemula {f_id} berhasil diklaim!", Fore.GREEN)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
         # 5i. Klaim Season Battle Pass Gratis
@@ -256,11 +301,13 @@ class BotRunner:
         max_tier = max(1, pass_xp // 100)
         for lv in range(1, max_tier + 1):
             if str(lv) not in claimed_f and lv not in claimed_f:
-                self.log("PASS", f"Mengklaim Season Pass Tier {lv}...", Fore.YELLOW)
                 act_res = self.api.send_actions([{"type": "passClaim", "data": {"track": "f", "lv": lv}}])
-                if act_res.get("state"):
-                    self.state = act_res["state"]
+                ok, err = check_act_ok(act_res)
+                if ok:
+                    self.state = act_res.get("state", self.state)
+                    self.log("PASS", f"Season Pass Tier {lv} berhasil diklaim!", Fore.GREEN)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+
 
         # 5j. Klaim Clan Quests (Jika dalam Clan)
         if self.state.get("clan"):
