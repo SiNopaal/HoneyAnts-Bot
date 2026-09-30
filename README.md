@@ -67,12 +67,13 @@ honeyants-bot/
 Anda dapat menggunakan salah satu dari dua cara berikut:
 
 ### Opsi A: Menggunakan File `.session` Telethon (Otomatis)
-1. Letakkan file session Anda di folder session (sesuai path di `config.py`).
+1. Letakkan file `.session` akun Anda di folder `sessions/` (atau atur `SESSIONS_DIR` di file `config.py`).
 2. Jalankan script ekstraksi:
    ```bash
    python extract_sessions.py
    ```
    *Script akan otomatis mengambil `tgWebAppData` dan menyimpannya ke `data.txt`.*
+
 
 ### Opsi B: Menggunakan `data.txt` Manual
 Buat file `data.txt` dan masukkan 1 akun per baris. Format yang didukung:

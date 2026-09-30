@@ -1,9 +1,16 @@
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
 # Telegram API credentials (Telethon)
-API_ID = 2040
-API_HASH = "b18441a1ff607e10a989891a5462e627"
-SESSIONS_DIR = r"C:\Users\asust\OneDrive\Documents\New Session Tele"
+API_ID = int(os.getenv("API_ID", 2040))
+API_HASH = os.getenv("API_HASH", "b18441a1ff607e10a989891a5462e627")
+
+# Direktori sesi Telethon (Mendukung folder ./sessions atau custom path via env)
+LOCAL_SESSION_FALLBACK = os.path.expanduser(r"~\OneDrive\Documents\New Session Tele")
+SESSIONS_DIR = os.getenv("SESSIONS_DIR", LOCAL_SESSION_FALLBACK if os.path.exists(LOCAL_SESSION_FALLBACK) else os.path.join(BASE_DIR, "sessions"))
+
 
 # Bot Target
 BOT_USERNAME = "HoneyAntsBot"
