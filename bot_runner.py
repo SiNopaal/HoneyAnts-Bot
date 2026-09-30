@@ -185,48 +185,65 @@ class BotRunner:
                         self.state = act_res["state"]
                     sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-        # 5e. Beli & Beri Pakan Lengkap (Madu untuk Energi + Ulat untuk Protein/Prajurit)
-        inv = self.state.get("inv", {})
-        if config.AUTO_BUY_FOOD and self.state.get("fero", 0) >= 15:
-            if inv.get("kurt", 0) < 2:
-                act_res = self.api.send_actions([{"type": "buyFood", "data": {"k": "kurt", "n": 2}}])
-                ok, _ = check_act_ok(act_res)
-                if ok:
-                    self.state = act_res.get("state", self.state)
-                    inv = self.state.get("inv", {})
-                    self.log("SHOP", "Beli 2x pakan ulat (kurt) untuk protein prajurit!", Fore.GREEN)
-                sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
-            if inv.get("bal", 0) < 2 and self.state.get("fero", 0) >= 15:
-                act_res = self.api.send_actions([{"type": "buyFood", "data": {"k": "bal", "n": 2}}])
-                ok, _ = check_act_ok(act_res)
-                if ok:
-                    self.state = act_res.get("state", self.state)
-                    inv = self.state.get("inv", {})
-                    self.log("SHOP", "Beli 2x pakan madu (bal) untuk stamina energi!", Fore.GREEN)
+        # 5d2. Pertahankan Koloni dari Serangan Invasi Musuh (Colony Defense)
+        for col in self.state.get("colonies", []):
+            if col.get("inv") and not col.get("dead"):
+                cid = col.get("id")
+                self.log("DEFEND", f"Koloni {col.get('name')}: TERDETEKSI SERANGAN INVASI MUSUH! Melakukan pertahanan manual...", Fore.RED)
+                def_res = self.api.call_action("defend", {"cid": cid})
+                if isinstance(def_res, dict) and def_res.get("win"):
+                    self.log("DEFEND", f"Pertahanan Koloni Berhasil! Musuh dipukul mundur (+8 Season XP)!", Fore.GREEN)
+                elif isinstance(def_res, dict):
+                    self.log("DEFEND", f"Status Pertahanan: {def_res.get('win', 'Selesai')}", Fore.CYAN)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-        if config.AUTO_FEED_ANTS:
+        # 5e. Beli & Beri Pakan Lengkap: Madu (Bal), Lalat (Sinek), Ulat (Kurt), Belalang (Cekirge)
+        ALL_FOODS = [
+            {"id": "sinek", "name": "Lalat (Sinek)", "buy_price": 5, "min_buy_fero": 15, "min_w": 0, "desc": "Protein pemula & latihan berburu"},
+            {"id": "kurt", "name": "Ulat Hongkong (Kurt)", "buy_price": 30, "min_buy_fero": 35, "min_w": 0, "desc": "Protein utama pembentukan prajurit"},
+            {"id": "cekirge", "name": "Belalang (Cekirge)", "buy_price": 50, "min_buy_fero": 65, "min_w": 5, "desc": "Super protein & ratu boost"},
+            {"id": "bal", "name": "Madu (Bal)", "buy_price": 25, "min_buy_fero": 30, "min_w": 0, "desc": "Energi stamina pekerja"},
+        ]
+
+        inv = self.state.get("inv", {})
+        # Beli pakan otomatis jika habis dan AMBER mencukupi
+        if getattr(config, "AUTO_BUY_FOOD", True):
+            fero = self.state.get("fero", 0)
+            for item in ALL_FOODS:
+                f_id = item["id"]
+                if inv.get(f_id, 0) < 1 and fero >= item["min_buy_fero"]:
+                    buy_n = 2 if f_id == "sinek" else 1
+                    total_cost = item["buy_price"] * buy_n
+                    act_res = self.api.send_actions([{"type": "buyFood", "data": {"k": f_id, "n": buy_n}}])
+                    ok, _ = check_act_ok(act_res)
+                    if ok:
+                        self.state = act_res.get("state", self.state)
+                        inv = self.state.get("inv", {})
+                        fero = self.state.get("fero", fero - total_cost)
+                        self.log("SHOP", f"Beli {buy_n}x pakan {item['name']} di toko! ({item['desc']})", Fore.GREEN)
+                    sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+
+        # Beri makan koloni secara lengkap ke arena
+        if getattr(config, "AUTO_FEED_ANTS", True):
             for col in self.state.get("colonies", []):
                 cid = col.get("id")
-                cur_foods = col.get("foods", [])
-                if len(cur_foods) < 3 and inv.get("kurt", 0) > 0:
-                    fid = "".join(random.choices(string.ascii_lowercase + string.digits, k=7))
-                    act_res = self.api.send_actions([{"type": "feed", "data": {"cid": cid, "type": "kurt", "fid": fid}}])
-                    ok, _ = check_act_ok(act_res)
-                    if ok:
-                        self.state = act_res.get("state", self.state)
-                        inv = self.state.get("inv", {})
-                        self.log("FEED", f"Koloni {col.get('name')}: Beri makan ulat (XP & Worker Boost)...", Fore.YELLOW)
-                    sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
-                if len(cur_foods) < 3 and inv.get("bal", 0) > 0:
-                    fid = "".join(random.choices(string.ascii_lowercase + string.digits, k=7))
-                    act_res = self.api.send_actions([{"type": "feed", "data": {"cid": cid, "type": "bal", "fid": fid}}])
-                    ok, _ = check_act_ok(act_res)
-                    if ok:
-                        self.state = act_res.get("state", self.state)
-                        inv = self.state.get("inv", {})
-                        self.log("FEED", f"Koloni {col.get('name')}: Beri makan madu (Energy stamina)...", Fore.YELLOW)
-                    sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
+                w_count = calc_workers(col)
+                for item in ALL_FOODS:
+                    f_id = item["id"]
+                    # Belalang membutuhkan minimal 5 pekerja aktif
+                    if f_id == "cekirge" and w_count < 5:
+                        continue
+                    if inv.get(f_id, 0) > 0:
+                        fid = "".join(random.choices(string.ascii_lowercase + string.digits, k=7))
+                        act_res = self.api.send_actions([{"type": "feed", "data": {"cid": cid, "type": f_id, "fid": fid}}])
+                        ok, err = check_act_ok(act_res)
+                        if ok:
+                            self.state = act_res.get("state", self.state)
+                            inv = self.state.get("inv", {})
+                            self.log("FEED", f"Koloni {col.get('name')}: Menaruh {item['name']} ke arena (+2 XP)! ({item['desc']})", Fore.GREEN)
+                        else:
+                            self.log("FEED", f"Koloni {col.get('name')}: Info pakan {item['name']}: {err}", Fore.LIGHTBLACK_EX)
+                        sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
 
         # 5f. Gabung Clan & Serang Boss Monster
@@ -317,9 +334,9 @@ class BotRunner:
                     self.log("UPGRADE", f"Info upgrade sarang: {err}", Fore.LIGHTBLACK_EX)
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
-        # 5h. Klaim Milestone Pemula (First Steps Bonus)
+        # 5h. Klaim Milestone Pemula (First Steps Bonus f1-f8)
         first_data = self.state.get("first", {})
-        for f_id in ["f1", "f2", "f3", "f4", "f5", "f6"]:
+        for f_id in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]:
             if not first_data.get(f_id):
                 act_res = self.api.send_actions([{"type": "firstClaim", "data": {"id": f_id}}])
                 ok, err = check_act_ok(act_res)
@@ -343,17 +360,19 @@ class BotRunner:
                 sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
 
-        # 5j. Klaim Clan Quests (Jika dalam Clan)
+        # 5j. Klaim Clan Quests (Jika dalam Clan: hunt, collect, win, exp, donate)
         if self.state.get("clan"):
             cq_data = self.state.get("cq", {})
             cq_prog = cq_data.get("prog", {})
             cq_claimed = cq_data.get("claimed", {})
-            for cq_id in ["donate", "boss", "pvp"]:
+            for cq_id in ["hunt", "collect", "win", "exp", "donate"]:
                 if cq_prog.get(cq_id, 0) > 0 and not cq_claimed.get(cq_id):
-                    self.log("CLAN_QUEST", f"Mengklaim Clan Quest: {cq_id} (+20 War Power)...", Fore.YELLOW)
+                    self.log("CLAN_QUEST", f"Mengklaim Clan Quest: {cq_id} (+War Power)...", Fore.YELLOW)
                     act_res = self.api.send_actions([{"type": "cqClaim", "data": {"id": cq_id}}])
-                    if act_res.get("state"):
-                        self.state = act_res["state"]
+                    ok, _ = check_act_ok(act_res)
+                    if ok:
+                        self.state = act_res.get("state", self.state)
+                        self.log("CLAN_QUEST", f"Clan Quest '{cq_id}' berhasil diklaim!", Fore.GREEN)
                     sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
 
             # 5k. Buka Peti Harian Clan (Clan Chest)
@@ -503,20 +522,26 @@ class BotRunner:
             if colonies:
                 active_col = colonies[0]
                 w_count = calc_workers(active_col) - int(active_col.get("away", 0))
-                # Wilayah Orman (Index 0): butuh minimal 10 * 1.25 = 13 pekerja aktif
-                if not active_col.get("exp") and w_count >= 13:
-                    eid = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
-                    self.log("EXPEDITION", f"Mengirim ekspedisi baru (Wilayah orman) untuk koloni {active_col.get('name')} (Pekerja: {w_count})...", Fore.YELLOW)
-                    act_res = self.api.send_actions([{"type": "expStart", "data": {"cid": active_col.get("id"), "r": 0, "id": eid}}])
-                    ok, err = check_act_ok(act_res)
-                    if ok:
-                        self.state = act_res.get("state", self.state)
-                        self.log("EXPEDITION", "Ekspedisi berhasil diberangkatkan!", Fore.GREEN)
+                if not active_col.get("exp"):
+                    chosen_reg = None
+                    if w_count >= 25:
+                        chosen_reg = {"r": 1, "name": "Kum Tepeleri (Gurun - Hadiah Tinggi)"}
+                    elif w_count >= 13:
+                        chosen_reg = {"r": 0, "name": "Yeil Orman (Hutan)"}
+
+                    if chosen_reg:
+                        eid = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+                        self.log("EXPEDITION", f"Mengirim ekspedisi ke {chosen_reg['name']} untuk koloni {active_col.get('name')} (Pekerja aktif: {w_count})...", Fore.YELLOW)
+                        act_res = self.api.send_actions([{"type": "expStart", "data": {"cid": active_col.get("id"), "r": chosen_reg["r"], "id": eid}}])
+                        ok, err = check_act_ok(act_res)
+                        if ok:
+                            self.state = act_res.get("state", self.state)
+                            self.log("EXPEDITION", f"Ekspedisi {chosen_reg['name']} berhasil diberangkatkan!", Fore.GREEN)
+                        else:
+                            self.log("EXPEDITION", f"Info Ekspedisi: {err}", Fore.LIGHTBLACK_EX)
+                        sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
                     else:
-                        self.log("EXPEDITION", f"Info Ekspedisi: {err}", Fore.LIGHTBLACK_EX)
-                    sleep_random(config.DELAY_BETWEEN_ACTIONS_MIN, config.DELAY_BETWEEN_ACTIONS_MAX)
-                elif not active_col.get("exp"):
-                    self.log("EXPEDITION", f"Pekerja aktif ({w_count}) belum mencukupi ekspedisi (butuh min 13 pekerja). Melanjutkan tugas lain...", Fore.LIGHTBLACK_EX)
+                        self.log("EXPEDITION", f"Pekerja aktif ({w_count}) belum mencukupi ekspedisi minimal (butuh min 13 pekerja). Melanjutkan tugas lain...", Fore.LIGHTBLACK_EX)
 
         # 12. PVP Free Training
         if config.AUTO_PVP_TRAIN and colonies:

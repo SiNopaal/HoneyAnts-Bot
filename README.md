@@ -13,13 +13,14 @@ Dilengkapi dengan fitur penyerangan **Boss Monster otomatis setiap 2 jam**, peng
 
 - ⏱️ **Dynamic Cooldown Synchronization**: Waktu jeda antar siklus otomatis menyesuaikan secara presisi dengan cooldown Boss Monster dan timer Ekspedisi di MiniApp (bukan sekadar timer kaku).
 - ⚔️ **Auto Boss Monster Raid**: Menyerang Boss Monster secara otomatis saat cooldown server selesai untuk akumulasi damage dan reward pool.
-- 🛡️ **Smart Clan Join & Requests**: Otomatis memindai klan terbuka dengan slot kosong yang sesuai dengan power koloni, atau mengirimkan request bergabung secara cerdas.
+- 🛡️ **Smart Clan Join & Requests**: Otomatis memindai klan terbuka dengan slot kosong yang sesuai dengan power koloni, atau mengajukan izin masuk secara presisi.
 - 🎁 **Daily Clan Chest & Clan War Claims**: Membuka Peti Harian Klan setiap hari dan mengklaim reward akhir perang klan (*Clan War*).
 - 💥 **Military Caste & Power Optimization**: Mengatur proporsi kasta militer (*Asker/Soldier 30%+*) untuk memaksimalkan ATK Power dan kritikal tempur.
-- 🐛 **Aggressive Dual Feeding**: Membeli & memberikan pakan ulat (*kurt* untuk protein & pasukan) dan madu (*bal* untuk energi stamina) agar koloni cepat naik level.
+- 🦗 **Complete 4-Course Feeding System**: Memberi makan seluruh variasi pakan lengkap: **Madu** (*Bal* untuk stamina energi), **Lalat** (*Sinek* untuk protein pemula), **Ulat Hongkong** (*Kurt* untuk pembentukan prajurit), dan **Belalang** (*Cekirge* untuk super protein & ratu boost).
+- 🛡️ **Auto Colony Defense Against Invasions**: Menjaga koloni dari serangan invasi serangga musuh secara manual untuk melindungi stok makanan & keselamatan pasukan (+8 Season XP).
 - 🐜 **Live Prey Hunting & Nest Cleaning**: Mengklaim hasil buruan serangga hidup (+15 XP instan & progress quest) serta membersihkan sisa makanan berjamur.
 - 🏰 **Auto Equipment & Nest Upgrade**: Upgrade sarang (*Ytong Nest*) otomatis saat saldo AMBER mencukupi untuk melipatgandakan batas kapasitas pasukan.
-- 🏆 **Auto Milestones & Referral Tier Claims**: Mengklaim pencapaian milestone ekosistem serta tier reward undangan teman.
+- 🏆 **Auto Milestones & Referral Tier Claims**: Mengklaim seluruh 8 milestone pemula (*First Steps f1-f8*), milestone ekosistem, serta reward tier undangan teman.
 - 📜 **Auto Battle Pass & Milestone Claims**: Mengklaim reward tier Battle Pass dan bonus pemula (*First Steps*).
 - 👑 **Auto Free Queen Claim**: Otomatis mengklaim ratu gratis pertama kali jika akun baru.
 - 🎓 **Auto Tutorial Completion**: Menyelesaikan tutorial pemula untuk bonus resource instan.
