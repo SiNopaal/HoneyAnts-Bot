@@ -118,18 +118,26 @@ def loop_mode():
         run_all_accounts()
         wait_seconds = config.LOOP_INTERVAL_HOURS * 3600
         print(Fore.CYAN + f"\n[*] Siklus selesai. Menunggu {config.LOOP_INTERVAL_HOURS} jam untuk siklus berikutnya..." + Style.RESET_ALL)
+        is_terminal = sys.stdout.isatty()
         try:
             for s in range(wait_seconds, 0, -1):
                 hrs = s // 3600
                 mins = (s % 3600) // 60
                 secs = s % 60
-                sys.stdout.write(f"\r{Fore.YELLOW}[TIMER] Siklus berikutnya dalam: {hrs:02d}:{mins:02d}:{secs:02d}{Style.RESET_ALL}")
-                sys.stdout.flush()
+                timer_str = f"[TIMER] Siklus berikutnya dalam: {hrs:02d}:{mins:02d}:{secs:02d}"
+                if is_terminal:
+                    sys.stdout.write(f"\r{Fore.YELLOW}{timer_str}{Style.RESET_ALL}")
+                    sys.stdout.flush()
+                else:
+                    # Di background / log file: cetak setiap 15 menit agar log rapi
+                    if s % 900 == 0 or s == wait_seconds:
+                        print(f"{Fore.YELLOW}{timer_str}{Style.RESET_ALL}")
                 time.sleep(1)
             print("\n")
         except KeyboardInterrupt:
             print(Fore.RED + "\n[!] Mode loop dihentikan oleh pengguna." + Style.RESET_ALL)
             break
+
 
 def main():
     banner()
