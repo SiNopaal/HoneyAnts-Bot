@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.env
+.venv/
+venv/
+
+# Sensitive account data & proxies (DO NOT COMMIT!)
+data.txt
+proxies.txt
+*.session
+*.session-journal
+*.sqlite
+
+# Allow example files
+!data.example.txt
+!proxies.example.txt
