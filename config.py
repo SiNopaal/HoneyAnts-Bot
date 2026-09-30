@@ -33,6 +33,8 @@ AUTO_CLAIM_TASKS = True          # Klaim daily quests yang sudah selesai
 AUTO_CLAIM_SOCIAL = True         # Buka dan klaim tugas sosial media
 AUTO_CLAIM_GIFTS = True          # Klaim hadiah inbox
 AUTO_CLAIM_REFERRAL = True       # Klaim komisi referral & tier milestone
+AUTO_CLAIM_CLAN_CHEST = True     # Buka dan klaim Peti Harian Klan
+AUTO_CLAIM_MILESTONES = True     # Klaim pencapaian milestone perkembangan koloni
 AUTO_EXPEDITION = True           # Kirim ekspedisi & klaim hasil ekspedisi
 AUTO_PVP_TRAIN = True            # Latihan perang pvp gratis harian
 

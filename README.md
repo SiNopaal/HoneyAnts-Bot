@@ -11,19 +11,23 @@ Dilengkapi dengan fitur penyerangan **Boss Monster otomatis setiap 2 jam**, peng
 
 ## 🌟 Fitur Unggulan
 
-- ⚔️ **Auto Boss Monster Raid (2-Hour Cooldown)**: Menyerang Boss Monster secara teratur setiap 2 jam untuk mendapatkan loot dan reward pool.
-- 🛡️ **Auto Join Top Open Clan**: Otomatis bergabung ke Klan terbuka untuk membuka akses perburuan Boss dan bonus perang klan.
-- 💥 **Power & Soldier Caste Boost**: Mengatur kasta militer (*Asker/Soldier 30%+*) untuk mendongkrak ATK Power dan damage kritikal ke monster.
-- 🐛 **Aggressive Feeding & Stock Pakan**: Otomatis membeli & memberi pakan ulat (*kurt*) agar koloni cepat naik level, memicu kelahiran pasukan baru, dan menaikkan power secara pesat.
-- 🏰 **Auto Equipment & Nest Upgrade**: Upgrade sarang (*Ytong Nest*) otomatis saat saldo AMBER mencukupi (+60 XP instan & melipatgandakan batas kapasitas pasukan).
+- ⏱️ **Dynamic Cooldown Synchronization**: Waktu jeda antar siklus otomatis menyesuaikan secara presisi dengan cooldown Boss Monster dan timer Ekspedisi di MiniApp (bukan sekadar timer kaku).
+- ⚔️ **Auto Boss Monster Raid**: Menyerang Boss Monster secara otomatis saat cooldown server selesai untuk akumulasi damage dan reward pool.
+- 🛡️ **Smart Clan Join & Requests**: Otomatis memindai klan terbuka dengan slot kosong yang sesuai dengan power koloni, atau mengirimkan request bergabung secara cerdas.
+- 🎁 **Daily Clan Chest & Clan War Claims**: Membuka Peti Harian Klan setiap hari dan mengklaim reward akhir perang klan (*Clan War*).
+- 💥 **Military Caste & Power Optimization**: Mengatur proporsi kasta militer (*Asker/Soldier 30%+*) untuk memaksimalkan ATK Power dan kritikal tempur.
+- 🐛 **Aggressive Dual Feeding**: Membeli & memberikan pakan ulat (*kurt* untuk protein & pasukan) dan madu (*bal* untuk energi stamina) agar koloni cepat naik level.
+- 🐜 **Live Prey Hunting & Nest Cleaning**: Mengklaim hasil buruan serangga hidup (+15 XP instan & progress quest) serta membersihkan sisa makanan berjamur.
+- 🏰 **Auto Equipment & Nest Upgrade**: Upgrade sarang (*Ytong Nest*) otomatis saat saldo AMBER mencukupi untuk melipatgandakan batas kapasitas pasukan.
+- 🏆 **Auto Milestones & Referral Tier Claims**: Mengklaim pencapaian milestone ekosistem serta tier reward undangan teman.
 - 📜 **Auto Battle Pass & Milestone Claims**: Mengklaim reward tier Battle Pass dan bonus pemula (*First Steps*).
 - 👑 **Auto Free Queen Claim**: Otomatis mengklaim ratu gratis pertama kali jika akun baru.
 - 🎓 **Auto Tutorial Completion**: Menyelesaikan tutorial pemula untuk bonus resource instan.
 - 📅 **Auto Daily Streak**: Mengklaim bonus login harian berturut-turut.
 - 🎡 **Auto Free Spin**: Putar roda keberuntungan harian gratis.
-- 🍯 **Auto Colony Care**: Panen madu (*balözü*), siram sarang saat kelembaban turun, dan bersihkan jamur makanan.
+- 🍯 **Auto Colony Care**: Panen madu (*balözü*), siram sarang saat kelembaban turun, dan pemeliharaan koloni.
 - 📱 **Auto Daily Quests & Social Tasks**: Menyelesaikan quest harian & tugas media sosial.
-- 🗺️ **Auto Expeditions**: Mengumpulkan hasil ekspedisi dan memberangkatkan ekspedisi baru.
+- 🗺️ **Auto Expeditions**: Menghitung kebutuhan pekerja dan memberangkatkan ekspedisi serta mengumpulkan hasilnya.
 - ⚔️ **Auto Free PVP Training**: Latihan perang koloni gratis harian.
 - 🔄 **Dual Input Mode**: Mendukung pembacaan otomatis file `.session` Telethon maupun input manual `data.txt` (format fleksibel).
 - 🌐 **Multi-Proxy Support**: Dukungan proxy HTTP/SOCKS5 via `proxies.txt`.
